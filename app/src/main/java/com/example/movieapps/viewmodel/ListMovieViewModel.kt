@@ -21,6 +21,10 @@ class ListMovieViewModel: ViewModel() {
 
     private lateinit var data: List<Movie>
 
+    init {
+        loadData()
+    }
+
     fun loadData() {
         viewModelScope.launch {
             try {
@@ -30,5 +34,9 @@ class ListMovieViewModel: ViewModel() {
                 listMovieUIState = ListMovieUIState.Error
             }
         }
+    }
+
+    fun onFavClicked(movie: Movie) {
+        movie.isLiked = !movie.isLiked
     }
 }

@@ -37,21 +37,33 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.movieapps.R
 import com.example.movieapps.data.DataSource
 import com.example.movieapps.model.Movie
+import com.example.movieapps.viewmodel.ListMovieUIState
+import com.example.movieapps.viewmodel.ListMovieViewModel
 
 @Composable
-fun ListMovieView(movieList: List<Movie>) {
+fun ListMovieView(
+    movieList: List<Movie>,
+    onFavClicked: (Movie) -> Unit
+) {
 
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
     ) {
-        items(movieList){
-            MovieCard(it,
-                Modifier
+        items(movieList){movie ->
+            var isLikedView by rememberSaveable { mutableStateOf(movie.isLiked) }
+
+            MovieCard(
+                movie = movie,
+                modifier = Modifier
                     .padding(8.dp)
-                    .fillMaxSize())
+                    .fillMaxSize(),
+                onFavClicked = {onFavClicked},
+                isLikedView = isLikedView
+            )
         }
     }
 }
@@ -59,7 +71,9 @@ fun ListMovieView(movieList: List<Movie>) {
 @Composable
 fun MovieCard(
     movie: Movie,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onFavClicked: () -> Unit,
+    isLikedView: Boolean
 ) {
 
     var isLiked by rememberSaveable { mutableStateOf(false) }
@@ -81,16 +95,14 @@ fun MovieCard(
                 )
 
                 FloatingActionButton(
-                    onClick = {
-                              isLiked = !isLiked
-                    },
+                    onClick = onFavClicked,
                     shape = CircleShape,
                     modifier = Modifier.padding(end = 4.dp, bottom = 4.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Filled.Favorite,
                         contentDescription = "Favorite",
-                        tint = if (isLiked){
+                        tint = if (isLikedView){
                             Color(0xFFEC407A)
                         } else {
                             Color(0xFF616161)
@@ -150,6 +162,19 @@ fun MovieCard(
 
 @Preview (showSystemUi = true, showBackground = true)
 @Composable
-fun ListMoviePreview() {
-    ListMovieView(DataSource().loadMovie())
+private fun ListMoviePreview() {
+
+    val listMovieViewModel: ListMovieViewModel = viewModel()
+    val status = listMovieViewModel.listMovieUIState
+
+    when(status) {
+        is ListMovieUIState.Loading -> {}
+        is ListMovieUIState.Success -> ListMovieView(
+            movieList = status.data,
+            onFavClicked = {
+                listMovieViewModel.onFavClicked(it)
+            }
+        )
+        is ListMovieUIState.Error -> {}
+    }
 }
